@@ -51,6 +51,14 @@ def label_to_tensor(label):
     return torch.clone(labels[label2index[label]])
 
 
+def labels_to_tensors(labels):
+    labels = labels.split('\n')
+    tensor = torch.empty(len(labels), 1, dtype=torch.long, device=DEVICE)
+    for i, label in enumerate(labels):
+        tensor[i, :] = label_to_tensor(label)
+    return tensor
+
+
 def predicted_to_label(predicted):
     _, top_i = predicted.topk(1)
     return index2label[top_i.item()]
@@ -61,7 +69,7 @@ def paragraph_to_tensor(string):
 
 
 def doc_to_tensor(doc):
-    paragraphs = doc.split('\n\n')
+    paragraphs = doc.split('\n\n\n')
     tensor = torch.empty(len(paragraphs), 1, n_letters, device=DEVICE)
     for i, paragraph in enumerate(paragraphs):
         tensor[i, 0, :] = paragraph_to_tensor(paragraph)
@@ -78,3 +86,14 @@ class DocsDataset(Dataset):
     def __getitem__(self, idx):
         label, sample = self.samples[idx % 2][idx // 2]
         return label_to_tensor(label), doc_to_tensor(sample)
+
+
+class ParagraphsDataset(Dataset):
+    def __init__(self, labels, samples):
+        self.samples = [labels, samples]
+
+    def __len__(self):
+        return len(self.samples[1])
+
+    def __getitem__(self, idx):
+        return labels_to_tensors(self.samples[0][idx]), doc_to_tensor(self.samples[1][idx])

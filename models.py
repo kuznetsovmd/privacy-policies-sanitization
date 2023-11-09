@@ -1,5 +1,6 @@
 import shutil
 import os
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,17 +11,51 @@ class NAN(Exception):
 
 
 class BaseModel:
-    def train(self, label_tensor, sample_tensor):
+
+    def train2(self, label_tensor, sample_tensor):
         self.module.train()
+        o = []
+        l = []
         self.module.init_hidden()
         self.optimizer.zero_grad()
+        for i in range(sample_tensor.size()[0]):
+            o.append(self.module(sample_tensor[i]))
+            loss = self.criterion(o[-1], label_tensor[i])
+            if loss.isnan(): 
+                raise NAN('Loss is nan!')
+            l.append(loss.item())
+            loss.backward(retain_graph=True)
+            self.optimizer.step()
+        return o, l
+
+    def test2(self, label_tensor, sample_tensor):
+        self.module.eval()
+        o = []
+        l = []
+        with torch.no_grad():
+            self.module.init_hidden()
+            for i in range(sample_tensor.size()[0]):
+                o.append(self.module(sample_tensor[i]))
+                l.append(self.criterion(o[-1], label_tensor[i]).item())
+            return o, l
+
+    def predict2(self, sample_tensor):
+        self.module.eval()
+        o = []
+        with torch.no_grad():
+            self.module.init_hidden()
+            for i in range(sample_tensor.size()[0]):
+                o.append(self.module(sample_tensor[i]))
+            return o
+
+    def train(self, label_tensor, sample_tensor):
+        self.module.train()
         for i in range(sample_tensor.size()[0]):
             output = self.module(sample_tensor[i])
         loss = self.criterion(output, label_tensor)
         if loss.isnan(): 
             raise NAN('Loss is nan!')
         loss.backward()
-        # nn.utils.clip_grad_norm_(self.module.parameters(), 1.0)
         self.optimizer.step()
         return output, loss.item()
 
@@ -62,6 +97,27 @@ class Model(BaseModel):
         self.validation_losses = []
         self.train_accuracies = []
         self.validation_accuracies = []
+
+    def train2(self, label_tensor, sample_tensor):
+        output, loss = super().train2(label_tensor, sample_tensor)
+        a = [self.__check(output[i], label_tensor[i]) for i in range(label_tensor.size()[0])]
+        self.train_accuracy.append(sum(a) / len(a))
+        self.train_loss += sum(loss) / len(loss)
+        self.train_iters += 1
+        return output, loss
+
+    def test2(self, label_tensor, sample_tensor):
+        output, loss = super().test2(label_tensor, sample_tensor)
+        a = None
+        try:
+            a = [self.__check(output[i], label_tensor[i]) for i in range(label_tensor.size()[0])]
+        except IndexError:
+            print(f': {len(output)=}, {len(label_tensor)=}')
+
+        self.validation_accuracy.append(sum(a) / len(a))
+        self.validation_loss += sum(loss) / len(loss)
+        self.validation_iters += 1
+        return output, loss
 
     def train(self, label_tensor, sample_tensor):
         output, loss = super().train(label_tensor, sample_tensor)
@@ -152,11 +208,11 @@ class RNN_2xR1(nn.Module):
         torch.nn.init.xavier_uniform_(self.fc3.weight)
 
         self.to(self.device)
+        self.init_hidden()
 
     def forward(self, input):
         input -= input.min()
         input /= input.max()
-        # input = F.normalize(input, dim=1)
 
         self.hidden1 = F.relu(self.fc1(torch.cat((input, self.hidden1), 1)))
         self.hidden1 = self.dropout(self.hidden1)
@@ -170,3 +226,25 @@ class RNN_2xR1(nn.Module):
         self.hidden1 = torch.zeros(1, self.hidden_size, device=self.device)
         self.hidden2 = torch.zeros(1, self.hidden_size, device=self.device)
 
+
+class LSTM(nn.Module):
+    def __init__(self, input_size=64, hidden_size=64, output_size=64, device='cpu', **kwargs):
+        super(LSTM, self).__init__()
+        self.device = device
+        self.hidden_size = hidden_size
+
+        self.lstm = nn.LSTM(input_size, hidden_size, 2)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+        self.to(self.device)
+
+    def forward(self, input):
+        input -= input.min()
+        input /= input.max()
+
+        output, _ = self.lstm(input)
+        output = self.fc(output)
+        return output
+
+    def init_hidden(self):
+        pass
