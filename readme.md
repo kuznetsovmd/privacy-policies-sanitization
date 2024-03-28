@@ -1,7 +1,7 @@
-- [ ] Fix models with different tasks
-- [ ] Write saving sanitized docs
-- [ ] Label more docs
-- [ ] Remove russian hrefs
-- [ ] Anonymize
-- [ ] Move data in outer directory and rewrite paths to data
-- [ ] Potentially get lower to wordwise for accuracy
+### Plan
+1. ~~Split model class~~
+1. ~~Make 1 entry point~~
+1. ~~Split algos and configs~~
+1. Integrate preprocess with numbers and NER
+1. Integrate prep&postprocess with length
+1. ~~Think how to merge alltogether~~

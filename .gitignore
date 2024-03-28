@@ -1,13 +1,8 @@
-resources/filtered_policies
+.vscode
+
 __pycache__/
 venv/
 
-resources/for_filtering 
-resources/for_filtering/no 
-resources/for_filtering/yes 
-resources/for_sanitization 
-resources/formatted_policies 
-resources/output_policies 
-resources/sanitization_docs 
-resources/sanitization_labels 
-resources/sanitized_policies
+env.py
+
+resources
