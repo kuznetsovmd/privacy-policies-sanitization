@@ -27,7 +27,7 @@ def process_paragraphs(input_doc, output_doc, output_labels):
         d.write('\n'.join(labels))
 
 
-def make_sanitizer_dataset(input_docs, output_docs, output_labels):
+def make_dataset(input_docs, output_docs, output_labels):
     not_labeled = {os.path.basename(f) for f in list_files(f'{input_docs}/*.txt')}
     labeled = {os.path.basename(f) for f in list_files(f'{output_docs}/*.txt')}
 

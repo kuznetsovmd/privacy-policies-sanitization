@@ -1,4 +1,0 @@
-
-
-def ner_remove():
-    ...

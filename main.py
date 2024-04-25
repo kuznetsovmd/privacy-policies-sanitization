@@ -1,40 +1,37 @@
-
-
 import argparse
 import sys
 
-from datasets.config import filtering_conf, sanitization_conf
-from datasets.filtering import make_filter_dataset
-from datasets.sanitization import make_sanitizer_dataset
+from datasets.config import dataset_conf
+from datasets.make_dataset import make_dataset
+from html_sanitization.config import html_conf
+from html_sanitization.sanitization import sanitize_html
 from env import env
-from filtering.config import filter_evaluation_conf, filter_training_conf
-from filtering.filter import eval_filter, train_filter
-from finalization.finalize import finalize
-from finalization.config import finalizer_conf
-from sanitization.config import sanitizer_evaluation_conf, sanitizer_training_conf
-from sanitization.sanitize import eval_sanitizer, train_sanitizer
+from ner_custom.custom_ner import ner_remove as custom_ner_remove
+from ner_custom.config import ner_conf as custom_ner_conf
+from deep_sanitization.config import \
+    sanitizer_training_conf as onelayer_training_conf, \
+    sanitizer_evaluation_conf as onelayer_evaluation_conf
+from deep_sanitization.sanitization import \
+    train_sanitizer as train_onelayer_sanitizer, \
+    eval_sanitizer as eval_onelayer_sanitizer
 
 
 def main(args):
+    if args.cmd == 'sanitize-html':
+        sanitize_html(**html_conf(**env()))
+
+    if args.cmd == 'sanitize-deep':
+        if args.train:
+            train_onelayer_sanitizer(**onelayer_training_conf(**env()))
+        if args.eval:
+            eval_onelayer_sanitizer(**onelayer_evaluation_conf(**env()))
+
     if args.cmd == 'make-dataset':
-        if args.filtering:
-            make_filter_dataset(**filtering_conf(**env()))
-        if args.sanitization:
-            make_sanitizer_dataset(**sanitization_conf(**env()))
-    if args.cmd == 'filter':
-        if args.train:
-            train_filter(**filter_training_conf(**env()))
-        if args.eval:
-            eval_filter(**filter_evaluation_conf(**env()))
-    if args.cmd == 'sanitize':
-        if args.train:
-            train_sanitizer(**sanitizer_training_conf(**env()))
-        if args.eval:
-            eval_sanitizer(**sanitizer_evaluation_conf(**env()))
-    if args.cmd == 'ner':
-        ...
-    if args.cmd == 'finalize':
-        finalize(**finalizer_conf(**env()))
+        make_dataset(**dataset_conf(**env()))
+
+    if args.cmd == 'remove-ne':
+        custom_ner_remove(**custom_ner_conf(**env()))
+
     return 0
 
 
@@ -44,11 +41,9 @@ if __name__ == '__main__':
         description='Command line tool to control sanitization framework'
     )
 
-    parser.add_argument('cmd', help='One of: make-dataset, filter, sanitize, ner, finalize')
-    parser.add_argument('-f', '--filtering', default=False, action='store_true', help='for make-dataset')
-    parser.add_argument('-s', '--sanitization', default=False, action='store_true', help='for make-dataset')
-    parser.add_argument('-t', '--train', default=False, action='store_true', help='for filter & sanitize')
-    parser.add_argument('-e', '--eval', default=False, action='store_true', help='for filter & sanitize')
+    parser.add_argument('cmd', help='One of: sanitize-html, sanitize-deep, make-dataset, remove-ne')
+    parser.add_argument('-t', '--train', default=False, action='store_true', help='for legacy-filter & legacy-sanitize & sanitize')
+    parser.add_argument('-e', '--eval', default=False, action='store_true', help='for legacy-filter & legacy-sanitize & sanitize')
     args = parser.parse_args()
 
     try:
@@ -57,5 +52,5 @@ if __name__ == '__main__':
         print('Interrupted by user')
         sys.exit(130)
     # except Exception as e:
-        # print(e)
-        # sys.exit(1)
+    #     print(e)
+    #     sys.exit(1)

@@ -1,9 +1,5 @@
 pyright
-setuptools
-wheel
-coincurve
-matplotlib
-numpy
-pandas
+transformers
+deeppavlov
 tqdm
 getkey

@@ -1,10 +1,10 @@
 from utils.fsys import make_paths
 
 
-def finalizer_conf(resources, **kwargs):
+def normalizer_conf(resources, **kwargs):
     inputs = {
-        'input_files': f'{resources}/sanitized/*.txt',
-        'old_descriptor': f'/mnt/Source/kuznetsovmd/__datasets/ru/output.json',
+        'input_files': f'/mnt/Source/kuznetsovmd/__datasets/ru_dirty/plain_policies/*.txt',
+        'old_descriptor': f'/mnt/Source/kuznetsovmd/__datasets/ru_dirty/json/plain.json',
         'new_descriptor': f'{resources}/finalized/output.json',
     }
 

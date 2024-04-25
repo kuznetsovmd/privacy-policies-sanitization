@@ -8,4 +8,7 @@ def env():
     return {
         'use_cuda': True,
         'resources': resources,
+        'tqdm_conf': {
+            'ncols': 80
+        }
     }
