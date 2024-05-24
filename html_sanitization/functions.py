@@ -35,7 +35,7 @@ def remove_element(element):
 
 
 def wrap_strings(element):
-    p = Tag(name='p')
+    p = Tag(name='wrapped_string')
     element.insert_before(p)
     merged_string = []
     while isinstance(element, NavigableString):
@@ -43,26 +43,6 @@ def wrap_strings(element):
         merged_string.append(element.extract().text.replace('\n', ' '))
         element = next_sibling
     p.append(NavigableString(''.join(merged_string)))
-
-
-def unwrap_table(element):
-    items = []
-    for i, row in enumerate(element.find_all('tr'), start=1):
-        for j, col in enumerate((*row.find_all('th'), *row.find_all('td')), start=1):
-            if not col.text.strip():
-                continue
-            
-            p = Tag(name='p')
-            p.append(NavigableString(f'***Таблица (строка {i}, столбец {j})***'))
-            items.append(p)
-
-            p = Tag(name='p')
-            p.append(col.extract())
-            items.append(p)
-
-    table = Tag(name='p')
-    table.extend(table)
-    element.replace_with(table)
 
 
 def element_regex(regex):

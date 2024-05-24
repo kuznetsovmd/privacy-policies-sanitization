@@ -1,20 +1,12 @@
 
 
-from utils.fsys import make_paths
-from utils.model import select_device
-
-
-def ner_conf(resources, use_cuda, tqdm_conf, **kwargs):
-    _ = select_device(use_cuda)
+def conf(resources, tqdm_conf, **kwargs):
     
     inputs = {
-        'input_docs': f'{resources}/sanitized_html/*.md',
+        'input_docs': f'{resources}/sanitized_html/*.*',
+        'output_file': f'{resources}/deeppavlov.json', 
+        'cpu_count': 12,
         'tqdm_conf': tqdm_conf
     }
 
-    outputs = {
-        'ner_removed': f'{resources}/ner_removed'
-    }
-    make_paths(outputs.values())
-
-    return { **inputs, **outputs }
+    return { **inputs }

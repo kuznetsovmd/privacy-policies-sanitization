@@ -1,5 +1,12 @@
-pyright
-transformers
-deeppavlov
 tqdm
+numpy
 getkey
+bs4
+nltk
+pymystem3
+natasha
+stanza
+spacy
+deeppavlov
+transformers
+--extra-index-url https://download.pytorch.org/whl/rocm6.0 torch torchvision torchaudio

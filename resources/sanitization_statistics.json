@@ -1,0 +1,55 @@
+{
+    "total_input_docs": {
+        "len": 24098
+    },
+    "deprecated": {
+        "len": 22614,
+        "time": "0m 0s"
+    },
+    "sanitize": {
+        "len": 22614,
+        "time": "3m 12s"
+    },
+    "short": {
+        "short_threshold": 1000,
+        "len": 10118,
+        "time": "0m 39s"
+    },
+    "duplicates": {
+        "len": 9363,
+        "time": "0m 0s"
+    },
+    "uppercase": {
+        "uppercase_threshold": 0.1,
+        "len": 9302,
+        "time": "0m 10s"
+    },
+    "foreign": {
+        "foreign_threshold": 0.5,
+        "len": 9258,
+        "time": "0m 9s"
+    },
+    "frequent": {
+        "words_cnt": 10,
+        "words": {
+            "персональный": 355073,
+            "пользователь": 225142,
+            "обработка": 135123,
+            "данные": 85569,
+            "политика": 76602,
+            "оператор": 66551,
+            "конфиденциальность": 56220,
+            "администрация": 55659,
+            "согласие": 50279,
+            "субъект": 49134
+        },
+        "len": 9051,
+        "time": "1m 5s"
+    },
+    "total_output_docs": {
+        "cpu_count": 12,
+        "len": 9051,
+        "time": "0m 0s",
+        "total_time": "5m 19s"
+    }
+}

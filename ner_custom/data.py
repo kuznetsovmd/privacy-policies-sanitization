@@ -1,20 +1,16 @@
 import json
 
 from tqdm import tqdm
+from nltk.stem import SnowballStemmer
 
 from utils.fsys import list_files, read_lines
-
-from petrovich.main import Petrovich
-from petrovich.enums import Case, Gender
-
-from utils.regexes import regex_match
+from utils.regexes import regex_match, compile
 
 
 def create_from_dataset(names_dataset):
     names = set()
     for nd in names_dataset:
-        with open(nd, 'r') as ds:
-            names.update([n for l in ds.read().splitlines() for n in json.loads(l)['text'].split(' ')])
+        names.update(n for l in read_lines(nd).splitlines() for n in json.loads(l)['text'].split(' '))
     return names
 
 
@@ -24,20 +20,35 @@ def create_from_policies(input_docs, regexes, tqdm_conf):
         text = read_lines(f)
         for i, r in enumerate(regexes):
             for o in regex_match(r, text):
-                o['regex_id'] = i
-                o['filename'] = f
                 all_matches.append(o)
-    
-    return all_matches, set(g for m in all_matches for g in m['groups'] if g)
+    return set(g for m in all_matches for g in m['groups'] if g)
+        
+
+def create_from_phias(phias_dataset, tqdm_conf):
+    files = list_files(phias_dataset)
+    regex = compile({
+        'args': {},
+        'expr': r'<[^<>]+NAME=\"([А-ЯЁа-яё\- .]+)\"[^<>]+TYPENAME=\"([А-ЯЁа-яё\- .]+)\"[^<>]+>',
+        'groups': (2, 1)
+    })
+
+    locations = set()
+    for f in tqdm(files, **tqdm_conf):
+        text = read_lines(f)
+        matches = regex_match(regex, text)
+        locations.update(g for m in matches for g in m['groups'])
+    return locations
 
 
-def preprocess_dataset(names, whitelist, blacklist):
-    p = Petrovich()
-    names = set(r.lower() for r in names if '.' not in r and r)
-    names.update([b.lower() for b in blacklist])
-    names = set(p.lastname(n, c, g) for n in names for g in [Gender.MALE, Gender.FEMALE] for c in Case.CASES)
-    names = names.difference([w.lower() for w in whitelist])
-    return set(r.replace('ё', 'е') for r in names)
+def preprocess_dataset(dataset, whitelist, blacklist):
+    snowball = SnowballStemmer(language="russian")
+    dataset = set(d for d in dataset)
+    dataset = set(d.lower().replace('.', ' ').replace('-', ' ').replace('ё', 'е') for d in dataset)
+    dataset = set(w for d in dataset for w in d.split())
+    dataset.update(b.lower() for b in blacklist)
+    dataset = set(snowball.stem(d) for d in dataset)
+    whitelist = set(snowball.stem(w.lower()) for w in whitelist)
+    return set(d for d in dataset.difference(whitelist) if d)
 
 
 def save_dataset(file, data):
@@ -56,4 +67,3 @@ def update_list(path, new=()):
     with open(path, 'w') as f:
         f.write('\n'.join(sorted(set(l))).lower())
     return l
-        

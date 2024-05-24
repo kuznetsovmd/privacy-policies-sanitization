@@ -6,17 +6,23 @@ from utils.fsys import read_lines
 
 
 class Sanitize:
-    def __init__(self, output_files, local_functions, extract_function, global_functions):
+    def __init__(self, output_files, local_functions, extract_function, global_functions, count_functions):
         Sanitize.output_files = output_files
         Sanitize.local_functions = local_functions
         Sanitize.extract_function = extract_function
         Sanitize.global_functions = global_functions
+        Sanitize.count_functions = count_functions
     
     @classmethod
     def __call__(cls, file):
         soup = BeautifulSoup(read_lines(file), 'html.parser')
         for fn in Sanitize.local_functions:
             Sanitize.__apply(soup, fn)
+
+        stats = {}
+        for el in Sanitize.__list(soup.html):
+            for fn in Sanitize.count_functions:
+                stats = fn(el, stats)
 
         text = Sanitize.extract_function(Sanitize.__list(soup.html))
         for fn in Sanitize.global_functions:
@@ -26,7 +32,7 @@ class Sanitize:
         with open(output_file, 'w') as f:
             f.write(text)
 
-        return output_file
+        return output_file, {**stats, 'len': len(text)}
 
     @staticmethod
     def __apply(element, fn, ignore={'[document]', 'html', 'body'}):

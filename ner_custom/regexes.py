@@ -133,7 +133,7 @@ def names_regexes():
     return tuple(map(compile, (
         {
             # Полный вариант вариант ловер
-            'sub': '{potential subject}',
+            'sub': lambda _: '{potential subject}',
             'args': {},
             'expr': f'(?={EDGE}'
                     f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}'
@@ -143,7 +143,7 @@ def names_regexes():
             'criterion': default_criterion
         }, {
             # Упрощенный вариант ловер
-            'sub': '{potential subject}',
+            'sub': lambda _: '{potential subject}',
             'args': {},
             'expr': f'(?={EDGE}'
                     f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}'
@@ -152,7 +152,7 @@ def names_regexes():
             'criterion': default_criterion
         }, {
             # Полный вариант вариант хаер
-            'sub': '{potential subject}',
+            'sub': lambda _: '{potential subject}',
             'args': {},
             'expr': f'(?={EDGE}'
                     f'({NAME_UPPER}){DOS_REQ}'
@@ -162,7 +162,7 @@ def names_regexes():
             'criterion': default_criterion
         }, {
             # Упрощенный вариант хаер
-            'sub': '{potential subject}',
+            'sub': lambda _: '{potential subject}',
             'args': {},
             'expr': f'(?={EDGE}'
                     f'({NAME_UPPER}){DOS_REQ}'

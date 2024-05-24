@@ -13,7 +13,7 @@ def make_paths(paths):
 
 
 def list_files(path): 
-    return set(glob.glob(path, include_hidden=True))
+    return glob.glob(path, include_hidden=True, recursive=True)
 
 
 def read_lines(filename):

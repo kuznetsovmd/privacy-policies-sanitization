@@ -1,37 +1,42 @@
 import argparse
 import sys
 
-from datasets.config import dataset_conf
-from datasets.make_dataset import make_dataset
-from html_sanitization.config import html_conf
-from html_sanitization.sanitization import sanitize_html
 from env import env
-from ner_custom.custom_ner import ner_remove as custom_ner_remove
-from ner_custom.config import ner_conf as custom_ner_conf
-from deep_sanitization.config import \
-    sanitizer_training_conf as onelayer_training_conf, \
-    sanitizer_evaluation_conf as onelayer_evaluation_conf
-from deep_sanitization.sanitization import \
-    train_sanitizer as train_onelayer_sanitizer, \
-    eval_sanitizer as eval_onelayer_sanitizer
+from descriptor_generation.config import conf as desc_conf
+from descriptor_generation.main import main as make_descriptor
+from html_sanitization.config import conf as html_conf
+from html_sanitization.main import main as html_sanitization
+from ner_custom.main import main as custom_ner_remove
+from ner_custom.config import conf as custom_ner_conf
+from ner_deeppavlov.main import main as deeppavlov_ner
+from ner_deeppavlov.config import conf as deeppavlov_conf
+from ner_natasha.main import main as natasha_ner
+from ner_natasha.config import conf as natasha_conf
+from ner_stanza.main import main as stanza_ner
+from ner_stanza.config import conf as stanza_conf
+from ner_spacy.main import main as spacy_ner
+from ner_spacy.config import conf as spacy_conf
+from ner_transformers.main import main as transformers_ner
+from ner_transformers.config import conf as transformers_conf
 
 
 def main(args):
+    if args.cmd == 'gen-descriptor':
+        make_descriptor(**desc_conf(**env()))
     if args.cmd == 'sanitize-html':
-        sanitize_html(**html_conf(**env()))
-
-    if args.cmd == 'sanitize-deep':
-        if args.train:
-            train_onelayer_sanitizer(**onelayer_training_conf(**env()))
-        if args.eval:
-            eval_onelayer_sanitizer(**onelayer_evaluation_conf(**env()))
-
-    if args.cmd == 'make-dataset':
-        make_dataset(**dataset_conf(**env()))
-
+        html_sanitization(**html_conf(**env()))
     if args.cmd == 'remove-ne':
         custom_ner_remove(**custom_ner_conf(**env()))
-
+    if args.cmd == 'deeppavlov-ne':
+        deeppavlov_ner(**deeppavlov_conf(**env()))
+    if args.cmd == 'natasha-ne':
+        natasha_ner(**natasha_conf(**env()))
+    if args.cmd == 'stanza-ne':
+        stanza_ner(**stanza_conf(**env()))
+    if args.cmd == 'spacy-ne':
+        spacy_ner(**spacy_conf(**env()))
+    if args.cmd == 'transformers-ne':
+        transformers_ner(**transformers_conf(**env()))
     return 0
 
 
@@ -41,9 +46,10 @@ if __name__ == '__main__':
         description='Command line tool to control sanitization framework'
     )
 
-    parser.add_argument('cmd', help='One of: sanitize-html, sanitize-deep, make-dataset, remove-ne')
-    parser.add_argument('-t', '--train', default=False, action='store_true', help='for legacy-filter & legacy-sanitize & sanitize')
-    parser.add_argument('-e', '--eval', default=False, action='store_true', help='for legacy-filter & legacy-sanitize & sanitize')
+    parser.add_argument(
+        'cmd', 
+        choices=['sanitize-html', 'remove-ne', 'deeppavlov-ne', 'natasha-ne', 
+                 'stanza-ne', 'spacy-ne', 'transformers-ne', 'gen-descriptor'])
     args = parser.parse_args()
 
     try:
