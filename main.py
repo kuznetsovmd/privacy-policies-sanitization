@@ -6,6 +6,7 @@ from descriptor_generation.config import conf as desc_conf
 from descriptor_generation.main import main as make_descriptor
 from html_sanitization.config import conf as html_conf
 from html_sanitization.main import main as html_sanitization
+from html_sanitization.main import gen_frequent
 from ner_custom.main import main as custom_ner_remove
 from ner_custom.config import conf as custom_ner_conf
 from ner_deeppavlov.main import main as deeppavlov_ner
@@ -25,6 +26,8 @@ def main(args):
         make_descriptor(**desc_conf(**env()))
     if args.cmd == 'sanitize-html':
         html_sanitization(**html_conf(**env()))
+    if args.cmd == 'gen-frequent':
+        gen_frequent(**html_conf(**env()))
     if args.cmd == 'remove-ne':
         custom_ner_remove(**custom_ner_conf(**env()))
     if args.cmd == 'deeppavlov-ne':
@@ -49,7 +52,8 @@ if __name__ == '__main__':
     parser.add_argument(
         'cmd', 
         choices=['sanitize-html', 'remove-ne', 'deeppavlov-ne', 'natasha-ne', 
-                 'stanza-ne', 'spacy-ne', 'transformers-ne', 'gen-descriptor'])
+                 'stanza-ne', 'spacy-ne', 'transformers-ne', 'gen-descriptor',
+                 'gen-frequent'])
     args = parser.parse_args()
 
     try:

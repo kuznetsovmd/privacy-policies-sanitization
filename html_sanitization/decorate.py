@@ -39,7 +39,6 @@ def decorate_table(element):
         
         table.append(tr)
 
-    print(table)
     element.replace_with(table)
 
 

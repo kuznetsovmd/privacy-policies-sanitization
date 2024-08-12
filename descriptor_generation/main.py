@@ -42,11 +42,11 @@ def main(input_files, old_descriptor, new_descriptor, old_metrics,
     shutil.copy(old_metrics, new_metrics)
     basenames = {os.path.basename(f): f for f in list_files(input_files)}
 
-    with open(old_descriptor,'r') as s:
+    with open(old_descriptor, 'r') as s:
         d = json.load(s)
 
-    with open(statistics_file,'r') as s:
-        s = {os.path.basename(f): s for f, s in json.load(s).items()}
+    with open(statistics_file, 'r') as s:
+        s = {os.path.basename(f): s for f, s in json.load(s)['sanitize']['stats'].items()}
 
     hashes = set()
     descriptor = []

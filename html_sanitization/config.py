@@ -1,23 +1,37 @@
 import re
+import json
+import nltk
+
+from nltk.corpus import stopwords
 from bs4 import Comment, NavigableString, Tag
 from html_sanitization.counters import structure_elements, text_elements
 from html_sanitization.decorate import decorate_h1, decorate_h2, decorate_h3, decorate_h4, decorate_h5, decorate_h6, decorate_li, decorate_table
 from html_sanitization.functions import document_regex, element_regex, extract_strings, get_attribute_value, process_element, remove_element, unwrap_element, wrap_strings
 from utils.regexes import compile
-from utils.fsys import make_paths, remove_paths
+from utils.fsys import make_paths, read_lines, remove_paths
 
 
 def conf(resources, tqdm_conf, **kwargs):
+    with open(f'{resources}/frequent.json', 'r') as s:
+        frequent_words = json.load(s)
+
+    nltk.download('stopwords')
+    russian_stopwords = stopwords.words('russian')
+    russian_stopwords.extend(read_lines(f'{resources}/stopwords.txt').split('\n'))
+
     inputs = {
-        'input_files': f'/mnt/Source/kuznetsovmd/__datasets/ppr-dataset/original_policies/*.*',
-        'stopwords_file': f'{resources}/stopwords.txt',
-        'sanitization_statistics_file': f'{resources}/sanitization_statistics.json',
-        'structure_statistics_file': f'{resources}/structure_statistics.json',
-        'words_cnt': 10,
+        'input_files': f'/mnt/Source/kuznetsovmd/datasets/ppr-dataset/original_policies/*.*',
+        'stats_file': f'{resources}/statistics.json',
+        'legacy_stats_file': f'{resources}/legacy_statistics.json',
+        'stopwords': russian_stopwords,
+        'frequent_words': frequent_words,
+        'words_cnt': 100,
         'cpu_count': 12,
+        'grams_n': 5,
         'short_threshold': 1000,
         'uppercase_threshold': .1,
-        'foreign_threshold': .5,
+        'foreign_threshold': .25,
+        'frequent_threshold': 2.5,
         'deprecated_rules': [
             lambda x: '.pdf' in x, 
             lambda x: '.doc' in x, 
@@ -112,7 +126,7 @@ def conf(resources, tqdm_conf, **kwargs):
                 }))),
 
                 process_element(lambda e: isinstance(e, NavigableString), decorate_li),
-                process_element(lambda e: isinstance(e, Tag) and e.name == 'table', decorate_table),
+                # process_element(lambda e: isinstance(e, Tag) and e.name == 'table', decorate_table),
             ],
 
             'count_functions': [structure_elements, text_elements],
