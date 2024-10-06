@@ -12,19 +12,18 @@ from utils.fsys import make_paths, read_lines, remove_paths
 
 
 def conf(resources, tqdm_conf, **kwargs):
-    with open(f'{resources}/frequent.json', 'r') as s:
-        frequent_words = json.load(s)
-
+    stat_dir = f'{resources}/sanitization'
+    res_dir = f'{resources}/sanitization_results'
+    
     nltk.download('stopwords')
     russian_stopwords = stopwords.words('russian')
     russian_stopwords.extend(read_lines(f'{resources}/stopwords.txt').split('\n'))
 
     inputs = {
         'input_files': f'/mnt/Source/kuznetsovmd/datasets/ppr-dataset/original_policies/*.*',
-        'stats_file': f'{resources}/statistics.json',
-        'legacy_stats_file': f'{resources}/legacy_statistics.json',
+        'stats_file': f'{stat_dir}/statistics.json',
         'stopwords': russian_stopwords,
-        'frequent_words': frequent_words,
+        'frequent_file': f'{stat_dir}/frequent.json',
         'words_cnt': 100,
         'cpu_count': 12,
         'grams_n': 5,
@@ -163,9 +162,9 @@ def conf(resources, tqdm_conf, **kwargs):
     }
 
     outputs = {
-        'sanitized_files': f'{resources}/sanitized_html',
+        'sanitized_files': res_dir,
+        'sanitization_stats': stat_dir,
     }
-    remove_paths(outputs.values())
     make_paths(outputs.values())
 
     return { **inputs, **outputs }

@@ -25,6 +25,7 @@ def dataset_regexes():
         r'МЕНЕДЖЕР[А-ЯЁ]*:?'
         r'[Вв] [Лл]ице'
         r'В ЛИЦЕ',
+        # r'самозанятый',
         # r'принадлежащий на праве собственности/праве пользования '
         # r'действующие от имени'
         # r'Автор сайта'
@@ -76,7 +77,6 @@ def dataset_regexes():
             'groups': (2, 4, 6),
             'criterion': default_criterion
         }, 
-
         # {
         #     # 6 Все комбины для сокращений ловер фамилия первая (2 слова) Добавить разделителей
         #     'args': {},
@@ -122,56 +122,17 @@ def dataset_regexes():
     )))
 
 
-def names_regexes():
-    EDGE = r'[^А-ЯЁа-яёA-Za-z]'
-    DOS_REQ = r'[\.\s]+'
-    DOS_OPT = r'[\.\s]*'
-    NAME_SHORT = r'[А-ЯЁ]'
-    NAME_UPPER = r'[А-ЯЁ]+'
-    NAME_LOWER = r'[а-яё]+'
+def ngrams_regexes():
+    SEP = r'[^А-ЯЁа-яёA-Za-z]'
+    WORD = r'[А-ЯЁа-яёA-Za-z]+'
 
     return tuple(map(compile, (
         {
             # Полный вариант вариант ловер
             'sub': lambda _: '{potential subject}',
             'args': {},
-            'expr': f'(?={EDGE}'
-                    f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}'
-                    f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}'
-                    f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}){EDGE}',
-            'groups': (1, 3, 5),
+            'expr': rf'(?={SEP}(({WORD}){SEP}+({WORD})))',
+            'groups': (2, 3),
             'criterion': default_criterion
-        }, {
-            # Упрощенный вариант ловер
-            'sub': lambda _: '{potential subject}',
-            'args': {},
-            'expr': f'(?={EDGE}'
-                    f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}'
-                    f'({NAME_SHORT}({NAME_LOWER})?){DOS_OPT}){EDGE}',
-            'groups': (1, 3),
-            'criterion': default_criterion
-        }, {
-            # Полный вариант вариант хаер
-            'sub': lambda _: '{potential subject}',
-            'args': {},
-            'expr': f'(?={EDGE}'
-                    f'({NAME_UPPER}){DOS_REQ}'
-                    f'({NAME_UPPER}){DOS_REQ}'
-                    f'({NAME_UPPER}){DOS_REQ}){EDGE}',
-            'groups': (1, 2, 3),
-            'criterion': default_criterion
-        }, {
-            # Упрощенный вариант хаер
-            'sub': lambda _: '{potential subject}',
-            'args': {},
-            'expr': f'(?={EDGE}'
-                    f'({NAME_UPPER}){DOS_REQ}'
-                    f'({NAME_UPPER}){DOS_REQ}){EDGE}',
-            'groups': (1, 2),
-            'criterion': default_criterion
-        }
+        },
     )))
-
-
-def toponyms_regexes():
-    return []

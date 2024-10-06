@@ -15,8 +15,7 @@ from utils.fsys import list_files, read_lines
 from utils.timing import time_since
 
 
-def gen_frequent(input_files, stopwords, cpu_count, words_cnt, 
-        frequent_file, grams_n, tqdm_conf, **kwargs):
+def gen_frequent(input_files, stopwords, cpu_count, words_cnt, grams_n, tqdm_conf):
     files = list_files(input_files)
 
     fn = Preprocess(stopwords, grams_n)
@@ -32,13 +31,12 @@ def gen_frequent(input_files, stopwords, cpu_count, words_cnt,
     for k, v in frequent_words.items():
         frequent_words[k] = v / len_files
 
-    with open(frequent_file, 'w') as s:
-        json.dump(frequent_words, s, indent=4, ensure_ascii=False)
+    return frequent_words
 
 
-def main(input_files, stats_file, legacy_stats_file, frequent_words, cpu_count, sanitizer_conf, 
-        deprecated_rules, sanitized_files, uppercase_threshold, short_threshold, 
-        foreign_threshold, frequent_threshold, stopwords, grams_n, tqdm_conf, **kwargs):
+def main(input_files, stats_file, stopwords, words_cnt, cpu_count, grams_n, 
+        short_threshold, uppercase_threshold, foreign_threshold, frequent_threshold,
+        deprecated_rules, sanitizer_conf, frequent_file, tqdm_conf, sanitized_files, **kwargs):
     start = time.time()
 
     files = set(list_files(input_files))
@@ -48,6 +46,11 @@ def main(input_files, stats_file, legacy_stats_file, frequent_words, cpu_count, 
     files, stats_duplicates = duplicates(files, tqdm_conf)
     files, stats_uppercase = uppercase(files, uppercase_threshold, tqdm_conf)
     files, stats_foreign = foreign(files, foreign_threshold, tqdm_conf)
+
+    frequent_words = gen_frequent(input_files, stopwords, cpu_count, words_cnt, grams_n, tqdm_conf)
+    with open(frequent_file, 'w') as f:
+        json.dump(frequent_words, f, indent=4, ensure_ascii=False)
+
     files, stats_frequent = frequent(files, stopwords, cpu_count, frequent_words, frequent_threshold, grams_n, tqdm_conf)
     
     for f in set(list_files(f'{sanitized_files}/*.*')).difference(files):
@@ -187,10 +190,10 @@ def frequent(input_files, stopwords, cpu_count, frequent_words, frequent_thresho
     fn = Preprocess(stopwords, grams_n)
     len_files = len(input_files)
     with Pool(cpu_count) as p:
-        file_words = list(tqdm(p.imap(fn, input_files), desc='gen-frequent', total=len_files, **tqdm_conf))
+        file_words = list(tqdm(p.imap(fn, input_files), desc='get-frequent', total=len_files, **tqdm_conf))
 
     stats = {}
-    for f, t in tqdm(file_words, desc='frequent', **tqdm_conf):
+    for f, t in tqdm(file_words, desc='filter-frequent', **tqdm_conf):
         score = 0
         for k, v in frequent_words.items():
             if k in t:

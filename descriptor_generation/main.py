@@ -55,13 +55,14 @@ def main(input_files, old_descriptor, new_descriptor, old_metrics,
         new_filename = f'{r["policy_hash"]}.md'
         if filename in basenames:
             shutil.copy(basenames[filename], f'{output_files}/{new_filename}')
-            hashes.add(r['policy_hash'])
-            descriptor.append({
-                'id': r['id'], 
-                'policy_hash': r['policy_hash'], 
-                'output_policy': new_filename,
-                'statistics': calc_stat(s[filename]),
-            })
+            if r['policy_hash'] not in hashes:
+                hashes.add(r['policy_hash'])
+                descriptor.append({
+                    'id': r['id'], 
+                    'policy_hash': r['policy_hash'], 
+                    'output_policy': new_filename,
+                    'statistics': calc_stat(s[filename]),
+                })
 
     with open(new_descriptor,'w') as s:
         json.dump(descriptor, s, indent=4)

@@ -1,20 +1,20 @@
 import re
-import json
+import pandas as pd
 from multiprocessing import Pool
 from tqdm import tqdm
 from natasha import Segmenter, MorphVocab, NewsEmbedding, NewsMorphTagger, \
     NewsSyntaxParser, NewsNERTagger, PER, LOC, NamesExtractor, AddrExtractor, Doc
 
 from utils.fsys import read_lines
-from utils.regexes import regex_match, compile
+from utils.regexes import compile
 from utils.fsys import list_files, read_lines
 
 
 def main(input_docs, output_file, cpu_count, tqdm_conf):
     texts = preprocess(list_files(input_docs), tqdm_conf, cpu_count)
     matches = process(Process(), texts, tqdm_conf, 12)
-    with open(output_file, 'w') as s:
-        json.dump(matches, s, ensure_ascii=False, indent=4)
+    df = pd.DataFrame(matches, columns=['file', 'library', 'type', 'value'])
+    df.to_csv(output_file)
 
 
 def preprocess(input_files, tqdm_conf, cpu_count):
@@ -28,22 +28,13 @@ def preprocess(input_files, tqdm_conf, cpu_count):
 def process(fn, spans, tqdm_conf, cpu_count):
     with Pool(cpu_count) as p:
         matches = list(tqdm(p.imap(fn, spans.items()), desc='process', total=len(spans), **tqdm_conf))
-    return {f: t for f, t in matches}
+    return [r for m in matches for r in m]
 
 
 class Preprocess:
-    def __init__(self):
-        Preprocess.regex = compile({
-            'args': {'flags': re.MULTILINE},
-            'expr': r'^[^А-ЯЁа-яёA-Za-z]*([А-ЯЁа-яёA-Za-z\d:;!? ,.\-\\\/(){}\[\]]+)',
-            'groups': (1,),
-        })
-    
     @classmethod
     def __call__(cls, file):
-        text = read_lines(file)
-        matches = regex_match(Preprocess.regex, text)
-        return file, [m['groups'][0] for m in matches]
+        return file, read_lines(file).split('\n')
 
 
 class Process:
@@ -60,7 +51,7 @@ class Process:
     @classmethod
     def __call__(cls, item):
         file, spans = item
-        pers, locs = set(), set()
+        output = []
 
         for s in spans:
             d = Doc(s)
@@ -76,8 +67,8 @@ class Process:
                 if span.type == LOC:
                     span.extract_fact(cls.addr_extractor)
                 
-            pers.update(set(_.text for _ in d.spans if _.fact and _.type == PER))
-            locs.update(set(_.text for _ in d.spans if _.fact and _.type == LOC))
+            output.extend((file, 'natasha', 'per', _.text) for _ in d.spans if _.fact and _.type == PER)
+            output.extend((file, 'natasha', 'loc', _.text) for _ in d.spans if _.fact and _.type == LOC)
 
-        return file, {'pers': list(pers), 'locs': list(locs)}
+        return output
     

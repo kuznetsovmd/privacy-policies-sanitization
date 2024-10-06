@@ -57,7 +57,6 @@ class splitter(Component):
 
 
 def main(input_docs, output_file, cpu_count, tqdm_conf):
-    texts = preprocess(list_files(input_docs), tqdm_conf, cpu_count)
 
     config_dict = parse_config(configs.ner.ner_collection3_bert)
     
@@ -75,22 +74,20 @@ def main(input_docs, output_file, cpu_count, tqdm_conf):
     ner_model = build_model(config_dict, download=False, install=False, load_trained=True)
     logging.set_verbosity(log_level)
     
-    output = {}
-    for d in tqdm(texts, desc='Docs', **tqdm_conf):
+    output = []
+    for d in tqdm(list_files(input_docs), desc='Docs', **tqdm_conf):
         text = read_lines(d)
         _, pred, offsets = ner_model([text])
 
         pers, locs = set(), set()
         for p, o in zip(pred, offsets):
             for s, e in boundries(add_pad(p, 'O'), add_pad(o, (0, 0)), ['B-PER', 'I-PER']):
-                pers.add(text[s:e])
+                output.append((d, 'deeppavlov', 'per', text[s:e]))
             for s, e in boundries(add_pad(p, 'O'), add_pad(o, (0, 0)), ['B-LOC', 'I-LOC']):
-                locs.add(text[s:e])
+                output.append((d, 'deeppavlov', 'loc', text[s:e]))
 
-        output[d] = {'pers': list(pers), 'locs': list(locs)}
-
-    with open(output_file, 'w') as s:
-        json.dump(output, s, ensure_ascii=False, indent=4)
+    df = pd.DataFrame(matches, columns=['file', 'library', 'type', 'value'])
+    df.to_csv(output_file)
 
 
 def preprocess(input_files, tqdm_conf, cpu_count):
@@ -102,19 +99,4 @@ def preprocess(input_files, tqdm_conf, cpu_count):
         texts_list = {f: t for f, t in list(texts_list)}
 
     return texts_list
-
-
-class Preprocess:
-    def __init__(self):
-        Preprocess.regex = compile({
-            'args': {'flags': re.MULTILINE},
-            'expr': r'^[^А-ЯЁа-яёA-Za-z]*([А-ЯЁа-яёA-Za-z\d:;!? ,.\-\\\/(){}\[\]]+)',
-            'groups': (1,),
-        })
-    
-    @classmethod
-    def __call__(cls, file):
-        text = read_lines(file)
-        matches = regex_match(Preprocess.regex, text)
-        return file, [m['groups'][0] for m in matches]
     

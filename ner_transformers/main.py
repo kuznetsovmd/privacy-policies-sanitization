@@ -1,20 +1,18 @@
-import re
-import json
+import pandas as pd
 from multiprocessing import Pool
 from tqdm import tqdm
 from transformers import AutoTokenizer, BertForTokenClassification
 from transformers import pipeline
 
 from utils.fsys import read_lines
-from utils.regexes import regex_match, compile
 from utils.fsys import list_files, read_lines
 
 
 def main(input_docs, output_file, cpu_count, tqdm_conf):
     texts = preprocess(list_files(input_docs), tqdm_conf, cpu_count)
     matches = process(texts, tqdm_conf)
-    with open(output_file, 'w') as s:
-        json.dump(matches, s, ensure_ascii=False, indent=4)
+    df = pd.DataFrame(matches, columns=['file', 'library', 'type', 'value'])
+    df.to_csv(output_file)
 
 
 def preprocess(input_files, tqdm_conf, cpu_count):
@@ -30,30 +28,18 @@ def process(docs, tqdm_conf):
     model = BertForTokenClassification.from_pretrained("0x7o/rubert-base-massive-ner")
     nlp = pipeline('ner', model=model, tokenizer=tokenizer, aggregation_strategy="max")
 
-    output = {}
+    output = []
     for file, spans in tqdm(docs.items(), total=len(docs), **tqdm_conf):
-        pers, locs = set(), set()
-        for res in nlp(spans):
-            for r in res:
-                if r['entity_group'] == 'person':
-                    pers.add(r['word'])
-                if r['entity_group'] == 'place_name':
-                    locs.add(r['word'])
+        for r in nlp(spans):
+            if r['entity_group'] == 'person':
+                output.append((file, 'transformers', 'per', r['word']))
+            if r['entity_group'] == 'place_name':
+                output.append((file, 'transformers', 'loc', r['word']))
 
-        output[file] = {'pers': list(pers), 'locs': list(locs)}
     return output
 
 
 class Preprocess:
-    def __init__(self):
-        Preprocess.regex = compile({
-            'args': {'flags': re.MULTILINE},
-            'expr': r'^[^А-ЯЁа-яёA-Za-z]*([А-ЯЁа-яёA-Za-z\d:;!? ,.\-\\\/(){}\[\]]+)',
-            'groups': (1,),
-        })
-    
     @classmethod
     def __call__(cls, file):
-        text = read_lines(file)
-        matches = regex_match(Preprocess.regex, text)
-        return file, [m['groups'][0] for m in matches]
+        return file, read_lines(file)

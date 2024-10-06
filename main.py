@@ -26,8 +26,6 @@ def main(args):
         make_descriptor(**desc_conf(**env()))
     if args.cmd == 'sanitize-html':
         html_sanitization(**html_conf(**env()))
-    if args.cmd == 'gen-frequent':
-        gen_frequent(**html_conf(**env()))
     if args.cmd == 'remove-ne':
         custom_ner_remove(**custom_ner_conf(**env()))
     if args.cmd == 'deeppavlov-ne':
@@ -61,6 +59,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('Interrupted by user')
         sys.exit(130)
-    # except Exception as e:
-    #     print(e)
-    #     sys.exit(1)
+        

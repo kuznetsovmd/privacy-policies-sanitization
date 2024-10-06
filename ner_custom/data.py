@@ -1,17 +1,40 @@
 import json
 
 from tqdm import tqdm
-from nltk.stem import SnowballStemmer
 
+from petrovich.main import Petrovich
+from petrovich.enums import Case, Gender
 from utils.fsys import list_files, read_lines
 from utils.regexes import regex_match, compile
 
 
-def create_from_dataset(names_dataset):
-    names = set()
-    for nd in names_dataset:
-        names.update(n for l in read_lines(nd).splitlines() for n in json.loads(l)['text'].split(' '))
-    return names
+def create_from_dataset(dataset):
+    return set(n for l in read_lines(dataset).splitlines() for n in json.loads(l)['text'].split(' '))
+
+
+def process_with_petrovich(dataset):
+    pvch = Petrovich()
+
+    cases = Case.CASES
+    genders = (Gender.MALE, Gender.FEMALE)
+
+    dataset = set(d for d in dataset)
+    dataset = set(d.replace('.', ' ').replace('-', ' ') for d in dataset)
+    dataset = set(w for d in dataset for w in d.split())
+
+    variants = set()
+    for item in dataset:
+        for c in cases:
+            for g in genders:
+                variants.update((
+                    pvch.firstname(item, c, g),
+                    pvch.lastname(item, c, g),
+                    pvch.middlename(item, c, g)))
+
+    dataset.update(variants)
+    dataset.update(set(w.upper() for w in dataset))
+
+    return set(d for d in dataset if d)
 
 
 def create_from_policies(input_docs, regexes, tqdm_conf):
@@ -37,18 +60,10 @@ def create_from_phias(phias_dataset, tqdm_conf):
         text = read_lines(f)
         matches = regex_match(regex, text)
         locations.update(g for m in matches for g in m['groups'])
+
+    # PYMORPHY
+
     return locations
-
-
-def preprocess_dataset(dataset, whitelist, blacklist):
-    snowball = SnowballStemmer(language="russian")
-    dataset = set(d for d in dataset)
-    dataset = set(d.lower().replace('.', ' ').replace('-', ' ').replace('ё', 'е') for d in dataset)
-    dataset = set(w for d in dataset for w in d.split())
-    dataset.update(b.lower() for b in blacklist)
-    dataset = set(snowball.stem(d) for d in dataset)
-    whitelist = set(snowball.stem(w.lower()) for w in whitelist)
-    return set(d for d in dataset.difference(whitelist) if d)
 
 
 def save_dataset(file, data):
@@ -60,10 +75,3 @@ def read_dataset(file):
     with open(file, 'r') as f:
         return set(f.read().split())
     
-
-def update_list(path, new=()):
-    with open(path) as f:
-        l = [*new, *f.read().splitlines()]
-    with open(path, 'w') as f:
-        f.write('\n'.join(sorted(set(l))).lower())
-    return l

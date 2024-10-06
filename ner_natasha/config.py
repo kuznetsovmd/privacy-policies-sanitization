@@ -1,9 +1,11 @@
 
 
 def conf(resources, tqdm_conf, **kwargs):
+    ner_res = f'{resources}/ner'
+
     inputs = {
-        'input_docs': f'{resources}/sanitized_html/*.*',
-        'output_file': f'{resources}/natasha.json', 
+        'input_docs': f'{resources}/sanitization_results/*.*',
+        'output_file': f'{ner_res}/natasha.csv', 
         'cpu_count': 12,
         'tqdm_conf': tqdm_conf,
     }
