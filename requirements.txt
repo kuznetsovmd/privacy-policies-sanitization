@@ -1,0 +1,8 @@
+tqdm
+numpy
+bs4
+nltk
+pymystem3
+plotly
+kaleido
+nbformat
